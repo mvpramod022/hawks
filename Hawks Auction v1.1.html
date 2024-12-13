@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cricket Team Auction</title>
+  <style>
+    ul.no-bullets {
+      list-style-type: none; /* Remove bullets */
+      padding: 0; /* Remove padding */      
+      margin: 0; /* Remove margins */
+     }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+
+    header {
+      background-color: #4CAF50;
+      color: white;
+      text-align: center;
+      padding: 10px;
+    }
+
+    h1 {
+      margin: 0;
+    }
+
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .budget {
+      flex: 1;
+      padding-right: 20px;
+    }
+
+    .current-player {
+      flex: 1;
+      padding-left: 20px;
+    }
+
+    .team-list,
+    .player-list {
+      width: 48%;
+      margin-top: 20px;
+    }
+
+    .team-list {
+      padding-right: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th, td {
+      padding: 12px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+
+    button {
+      padding: 8px 16px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
+      margin-top: 10px;
+    }
+
+    button:disabled {
+      background-color: #ccc;
+    }
+
+    .budget div,
+    .team-list div {
+      margin-bottom: 10px;
+    }
+
+    #player_details {
+      margin-top: 20px;
+      border: 1px solid #ddd;
+      padding: 15px;
+      background-color: #f9f9f9;
+    }
+
+    #player_details div {
+      margin-bottom: 10px;
+    }
+
+    .error {
+      color: red;
+      font-size: 14px;
+    }
+
+    @media (max-width: 768px) {
+      table th, table td {
+        font-size: 14px;
+        padding: 8px;
+      }
+
+      button {
+        padding: 6px 12px;
+        font-size: 14px;
+      }
+
+      .container {
+        flex-direction: column;
+        padding: 10px;
+      }
+
+      .team-list,
+      .player-list {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Cricket Team Auction</h1>
+    <p>Each captain has a budget of 500 to build their team. Base price for all players is 10.</p>
+    <button onclick="startAuction()">Start Auction</button>
+  </header>
+
+  <!-- Popup for Captains -->
+  <div id="auction_popup" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.5); justify-content: center; align-items: center;">
+    <div style="background: white; padding: 20px; border-radius: 8px; width: 300px; text-align: center;">
+      <h3>Enter Captain Names</h3>
+      <input type="text" id="captain1_name" placeholder="Captain 1 Name" style="width: 100%; padding: 8px; margin-bottom: 10px;">
+      <input type="text" id="captain2_name" placeholder="Captain 2 Name" style="width: 100%; padding: 8px; margin-bottom: 10px;">
+      <button onclick="submitCaptains()">Submit</button>
+      <button onclick="closePopup()">Cancel</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- Budget Section -->
+    <div class="budget">
+      <h2>Captain Budget</h2>
+      <div>
+        <label for="captain1_budget">Captain 1 Budget: </label>
+        <span id="captain1_budget">500</span>
+      </div>
+      <div>
+        <label for="captain2_budget">Captain 2 Budget: </label>
+        <span id="captain2_budget">500</span>
+      </div>
+    </div>
+
+    <!-- Current Player Details Section -->
+    <div class="current-player">
+      <h2>Current Player Details</h2>
+      <div id="player_details">
+        <div>
+          <strong>Player Name: </strong><span id="player_name">None</span>
+        </div>
+        <div>
+          <strong>Base Price: </strong><span id="player_base_price">10</span>
+        </div>
+        <div>
+          <strong>Role: </strong><span id="player_category">All-rounder</span>
+        </div>
+        <div>
+          <strong>Current Bidder: </strong>
+          <span id="current_bidder">None</span>
+        </div>
+        <div>
+          <strong>Current Price: </strong><input type="number" id="current_price" editable="true" value="10" min="10" />
+        </div>
+        <button onclick="drawPlayer()">Draw Player</button>
+	<button onclick="startBidding()">Bid</button>
+        <div class="error" id="error_message"></div>
+        <button onclick="sellPlayer()">Sell</button>
+	<button onclick="skipPlayer()">Skip Player</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Player List and Team List Section -->
+  <div class="container">
+    <div class="team-list">
+      <h2>Captain Teams</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Captain 1</th>
+            <th>Captain 2</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <ul id="captain1_players" class="no-bullets"></ul>
+            </td>
+            <td>
+              <ul id="captain2_players" class="no-bullets"></ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="player-list">
+      <h2>Player List</h2>
+      <table id="players_list">
+        <thead>
+          <tr>
+            <th>Player Name</th>
+            <th>Role</th>
+            <th>Base Price</th>
+            <th>Status</th>
+            <th>Sell Price</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="players_table">
+          <!-- Editable players will be listed here -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    let captain1_budget = 500;
+    let captain2_budget = 500;
+    let currentBidder = 'captain1'; // Initially, Captain 1 starts the bidding
+
+    let players = [
+//      { name: 'Sharath KP', role: 'Batsman', basePrice: 10, status: 'Available', sellPrice: '' },
+//      { name: 'Abhilash', role: 'Batsman', basePrice: 10, status: 'Available', sellPrice: '' },
+//      { name: 'Abhinandan', role: 'Batsman', basePrice: 10, status: 'Available', sellPrice: '' },
+//      { name: 'Abhishek', role: 'Batsman', basePrice: 10, status: 'Available', sellPrice: '' },
+//      { name: 'Kushal', role: 'All-Rounder', basePrice: 10, status: 'Available', sellPrice: '' },
+//      { name: 'Lohith C', role: 'Batsman', basePrice: 10, status: 'Available', sellPrice: '' },
+//      { name: 'Mahesh', role: 'Bowler', basePrice: 10, status: 'Available', sellPrice: '' },
+//      { name: 'Manish', role: 'Batsman', basePrice: 10, status: 'Available', sellPrice: '' },
+//      { name: 'Narasimha', role: 'All-Rounder', basePrice: 10, status: 'Available', sellPrice: '' },
+//      { name: 'Narendra', role: 'All-Rounder', basePrice: 10, status: 'Available', sellPrice: '' },
+//      { name: 'Naveen', role: 'All-Rounder', basePrice: 10, status: 'Available', sellPrice: '' },
+//      { name: 'Pramod', role: 'Bowler', basePrice: 10, status: 'Available', sellPrice: '' },
+//      { name: 'Pramod DS', role: 'Batsman', basePrice: 10, status: 'Available', sellPrice: '' },
+//      { name: 'Risky', role: 'Batsman', basePrice: 10, status: 'Available', sellPrice: '' },
+//      { name: 'Rithu', role: 'Bowler', basePrice: 10, status: 'Available', sellPrice: '' },
+//      { name: 'Sandeep', role: 'All-Rounder', basePrice: 10, status: 'Available', sellPrice: '' },
+//      { name: 'Shreyas', role: 'Batsman', basePrice: 10, status: 'Available', sellPrice: '' },
+//      { name: 'Srikanth (Jinke)', role: 'Batsman', basePrice: 10, status: 'Available', sellPrice: '' },
+//      { name: 'Srikanth Reddy', role: 'Bowler', basePrice: 10, status: 'Available', sellPrice: '' },
+//      { name: 'Varun', role: 'Batsman', basePrice: 10, status: 'Available', sellPrice: '' },
+//      { name: 'VJ Reddy', role: 'Batsman', basePrice: 10, status: 'Available', sellPrice: '' },
+//      { name: 'Akash', role: 'All-Rounder', basePrice: 10, status: 'Available', sellPrice: '' },
+//      { name: 'Anand', role: 'Bowler', basePrice: 10, status: 'Available', sellPrice: '' },
+//      { name: 'Debashis', role: 'Batsman', basePrice: 10, status: 'Available', sellPrice: '' },
+//      { name: 'Maddy', role: 'All-Rounder', basePrice: 10, status: 'Available', sellPrice: '' },
+//      { name: 'Rahman', role: 'Batsman', basePrice: 10, status: 'Available', sellPrice: '' },
+      { name: 'Rajesh Koli', role: 'Batsman', basePrice: 10, status: 'Available', sellPrice: '' },
+      { name: 'Rajiv', role: 'Bowler', basePrice: 10, status: 'Available', sellPrice: '' },
+      { name: 'Sagar', role: 'All-Rounder', basePrice: 10, status: 'Available', sellPrice: '' },
+      { name: 'Sharath Benne', role: 'Batsman', basePrice: 10, status: 'Available', sellPrice: '' },
+      { name: 'Sudeep', role: 'Bowler', basePrice: 10, status: 'Available', sellPrice: '' }
+    ];
+
+    let currentPlayer = null;
+
+    function startAuction() {
+      document.getElementById("auction_popup").style.display = "flex";
+    }
+
+    function closePopup() {
+      document.getElementById("auction_popup").style.display = "none";
+    }
+
+    function submitCaptains() {
+      const captain1Name = document.getElementById("captain1_name").value;
+      const captain2Name = document.getElementById("captain2_name").value;
+
+      if (captain1Name && captain2Name) {
+        document.getElementById("captain1_name").value = captain1Name;
+        document.getElementById("captain2_name").value = captain2Name;
+        closePopup();
+      } else {
+        alert("Please enter both captain names!");
+      }
+    }
+
+    function drawPlayer() {
+      const AvailablePlayers = players.filter(player => player.status === 'Available'); 
+
+      if (AvailablePlayers.length === 0) {
+        alert("All players are sold! Drawing skipped players ");
+	drawskippedPlayer()
+        return;
+      }
+
+      const randomIndex = Math.floor(Math.random() * AvailablePlayers.length);
+      currentPlayer = AvailablePlayers[randomIndex];
+
+      document.getElementById("player_name").textContent = currentPlayer.name;
+      document.getElementById("player_base_price").textContent = currentPlayer.basePrice;
+      document.getElementById("player_category").textContent = currentPlayer.role;
+      document.getElementById("current_price").value = currentPlayer.basePrice;
+      document.getElementById("current_bidder").textContent = currentBidder === 'captain1' ? 'Captain 1' : 'Captain 2';
+      document.getElementById("error_message").textContent = '';
+    }
+
+    function drawskippedPlayer() {
+      const AvailablePlayers = players.filter(player => player.status === 'skipped'); 
+
+      if (AvailablePlayers.length === 0) {
+        alert("All players are sold!");
+        return;
+      }
+
+      const randomIndex = Math.floor(Math.random() * AvailablePlayers.length);
+      currentPlayer = AvailablePlayers[randomIndex];
+
+      document.getElementById("player_name").textContent = currentPlayer.name;
+      document.getElementById("player_base_price").textContent = currentPlayer.basePrice;
+      document.getElementById("player_category").textContent = currentPlayer.role;
+      document.getElementById("current_price").value = currentPlayer.basePrice;
+      document.getElementById("current_bidder").textContent = currentBidder === 'captain1' ? 'Captain 1' : 'Captain 2';
+      document.getElementById("error_message").textContent = '';
+    }
+
+
+
+    function startBidding() {
+      const currentPrice = parseInt(document.getElementById("current_price").value, 10);
+      document.getElementById("current_price").value = currentPrice + 1;
+
+      // Rotate current bidder
+      currentBidder = currentBidder === 'captain1' ? 'captain2' : 'captain1';
+      document.getElementById("current_bidder").textContent = currentBidder === 'captain1' ? 'Captain 1' : 'Captain 2';
+    }
+
+    function sellPlayer() {
+      const currentPrice = parseInt(document.getElementById("current_price").value, 10);
+      const selectedCaptain = currentBidder === 'captain1' ? 'captain1' : 'captain2';
+      
+      if (selectedCaptain === 'captain1' && captain1_budget >= currentPrice) {
+        captain1_budget -= currentPrice;
+        document.getElementById("captain1_budget").textContent = captain1_budget;
+        document.getElementById("captain1_players").innerHTML += `<li>${currentPlayer.name}</li>`;
+      } else if (selectedCaptain === 'captain2' && captain2_budget >= currentPrice) {
+        captain2_budget -= currentPrice;
+        document.getElementById("captain2_budget").textContent = captain2_budget;
+        document.getElementById("captain2_players").innerHTML += `<li>${currentPlayer.name}</li>`;
+      } else {
+        alert('Not enough budget!');
+        return;
+      }
+
+      currentPlayer.sellPrice = currentPrice;
+      currentPlayer.status = 'sold';
+      renderPlayerList();
+      currentPlayer = null;
+      document.getElementById("player_name").textContent = 'None';
+      drawPlayer();
+    }
+
+    function renderPlayerList() {
+      const playersTable = document.getElementById("players_table");
+      playersTable.innerHTML = '';
+      players.forEach((player, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${player.name}</td>
+          <td>${player.role}</td>
+          <td>${player.basePrice}</td>
+          <td>${player.status}</td>
+          <td>${player.sellPrice || ''}</td>
+          <td><button onclick="removePlayer(${index})">Remove</button></td>
+        `;
+        playersTable.appendChild(row);
+      });
+    }
+
+    function removePlayer(index) {
+      players.splice(index, 1);
+      renderPlayerList();
+    }
+
+    renderPlayerList(); // Initial player list render
+
+
+  function startAuction() {
+    // Display the pop-up
+    document.getElementById("auction_popup").style.display = "flex";
+  }
+
+  function closePopup() {
+    // Hide the pop-up
+    document.getElementById("auction_popup").style.display = "none";
+  }
+
+  function submitCaptains() {
+    // Get entered names
+    const captain1Name = document.getElementById("captain1_name").value;
+    const captain2Name = document.getElementById("captain2_name").value;
+
+    if (captain1Name && captain2Name) {
+      // Replace placeholder names with entered names
+      document.querySelector("label[for='captain1_budget']").textContent = `${captain1Name} Budget: `;
+      document.querySelector("label[for='captain2_budget']").textContent = `${captain2Name} Budget: `;
+
+      // Update captain names in the player list
+      const headers = document.querySelectorAll(".team-list table thead th");
+      if (headers.length >= 2) {
+        headers[0].textContent = captain1Name;
+        headers[1].textContent = captain2Name;
+      }
+
+      // Hide the pop-up
+      closePopup();
+    } else {
+      alert("Please enter both captain names!");
+    }
+  }
+    function skipPlayer() {
+      if (!currentPlayer) {
+        alert("No player is drawn yet!");
+        return;
+      }
+
+    //  skippedPlayers.push(currentPlayer.name);
+      currentPlayer.status = 'skipped';
+      alert(`${currentPlayer.name} has been skipped.`);
+      renderPlayerList();
+      currentPlayer = null;
+      document.getElementById("player_name").textContent = 'None';
+      drawPlayer();
+    }
+  </script>
+</body>
+
+</html>
